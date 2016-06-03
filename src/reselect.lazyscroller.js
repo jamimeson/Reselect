@@ -130,16 +130,20 @@ Reselect.service('LazyScroller', ['LazyContainer', '$compile', function(LazyCont
                         cssClass     : self.choices[i] ? self.choices[i].class : ''
 					});
 
+                    container.scope[self.options.scopeName] = self.choices[i];
+                    container.scope.$sticky = false;
+                    container.scope.$group  = false;
+
+
                     if(self.choices[i] && self.choices[i].$sticky === true){
                         container.scope[self.options.scopeName] = self.choices[i].text;
-                        container.scope.$onClick       = self.choices[i].onClick;
-                        container.scope.$sticky        = self.choices[i].$sticky;
-                        container.scope.$stickyContent = self.choices[i].$stickyContent;
-                    }else{
-                        container.scope[self.options.scopeName] = self.choices[i];
-                        container.scope.$sticky        = false;
+                        container.scope.$onClick                = self.choices[i].onClick;
+                        container.scope.$sticky                 = self.choices[i].$sticky;
+                        container.scope.$stickyContent          = self.choices[i].$stickyContent;
+                    }else if(self.choices[i] && self.choices[i].$$group){
+                        container.scope.$group        = !!self.choices[i].$$group;
+                        container.scope.$groupContent = self.choices[i].$$group;
                     }
-
 				}
 			}
 		}

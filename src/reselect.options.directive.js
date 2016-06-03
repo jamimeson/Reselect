@@ -1,7 +1,7 @@
 Reselect.value('reselectChoicesOptions', {
 	noOptionsText: 'No Options',
-    choiceHeight: 36,
-    listHeight:300
+    choiceHeight : 36,
+    listHeight   : 300
 });
 
 Reselect.directive('triggerAtBottom', ['$parse', 'ReselectUtils', function($parse, ReselectUtils) {
@@ -86,9 +86,9 @@ Reselect.directive('reselectChoices', ['ChoiceParser', '$compile',
 				};
 			},
 			controllerAs: '$options',
-			controller: ['$scope', '$element', '$attrs', '$parse', '$http', '$timeout',
+			controller: ['$scope', '$element', '$attrs', '$parse', '$http', '$timeout', '$templateCache',
 				'ReselectDataAdapter', 'ReselectAjaxDataAdapter', 'KEYS',
-				function($scope, $element, $attrs, $parse, $http, $timeout, ReselectDataAdapter,
+				function($scope, $element, $attrs, $parse, $http, $timeout, $templateCache, ReselectDataAdapter,
 					ReselectAjaxDataAdapter, KEYS) {
 
 					var $Reselect = $element.controller('reselect');
@@ -119,19 +119,11 @@ Reselect.directive('reselectChoices', ['ChoiceParser', '$compile',
 					self.remotePagination = {};
 
 					self.haveChoices = false;
+                    self.groupByFn = null;
 
 					self.CHOICE_TEMPLATE = angular.element(
-						'<li class="reselect-option reselect-option-choice" style="height: {{$options.choiceHeight}}px" ng-click="$options._selectChoice($index, $onClick)"></li>'
+						$templateCache.get('templates/reselect.choice.tpl.html')
 					);
-                    self.CHOICE_TEMPLATE.append('<div class="reselect-option-choice-sticky" ng-show="$sticky === true" ng-bind-html="$stickyContent"></div>');
-                    self.CHOICE_TEMPLATE.append('<div class="reselect-option-choice-container" ng-show="!$sticky"></div>');
-					self.CHOICE_TEMPLATE.attr('ng-class',
-						'[{\'reselect-option-choice--highlight\' : $options.activeIndex === $index, \'reselect-option-choice--selected\' : $options.selectedIndex === $index }, cssClass]'
-					);
-					self.CHOICE_TEMPLATE.attr('ng-mouseenter',
-						'$options.activeIndex = $index');
-					self.CHOICE_TEMPLATE.attr('ng-mouseleave',
-						'$options.activeIndex = null');
 
                     /**
                      * Single Choice - Sticky Choices
@@ -204,11 +196,21 @@ Reselect.directive('reselectChoices', ['ChoiceParser', '$compile',
 					 */
 
 					$Reselect.parsedOptions = ChoiceParser.parse($attrs.options);
+                    $Reselect.parsedGroupBy = $parse($attrs.groupBy)($scope);
+
+                    if(typeof $Reselect.parsedGroupBy === 'string'){
+                        self.groupByFn = function(choice){
+                            return choice[$Reselect.parsedGroupBy];
+                        };
+                    }else if(typeof $Reselect.parsedGroupBy === 'function'){
+                        self.groupByFn = $Reselect.parsedGroupBy;
+                    }
 
 					if ($attrs.remote) {
 						self.remoteOptions = $parse($attrs.remote)($scope.$parent);
 
 						$Reselect.DataAdapter = new ReselectAjaxDataAdapter(self.remoteOptions, $Reselect.parsedOptions);
+                        $Reselect.DataAdapter.groupByFn = self.groupByFn;
 
 						$Reselect.DataAdapter.prepareGetData = function(){
 							$Reselect.DataAdapter.page = 1;
@@ -218,6 +220,7 @@ Reselect.directive('reselectChoices', ['ChoiceParser', '$compile',
 						};
 					} else {
 						$Reselect.DataAdapter = new ReselectDataAdapter();
+						$Reselect.DataAdapter.groupByFn = self.groupByFn;
 						$Reselect.DataAdapter.updateData($Reselect.parsedOptions.source($scope.$parent));
 
 						$Reselect.DataAdapter.observe = function(onChange) {
@@ -239,14 +242,9 @@ Reselect.directive('reselectChoices', ['ChoiceParser', '$compile',
 
 						self.is_loading = true;
 
-						$Reselect.DataAdapter.getData($Reselect.search_term)
+						$Reselect.DataAdapter.getData($Reselect.search_term, loadingMore)
 							.then(function(choices) {
-								if(!$Reselect.search_term){
-									$Reselect.DataAdapter.updateData(choices.data, loadingMore);
-									self.render();
-								}else{
-									self.render(choices.data);
-								}
+                                self.render(choices.data);
 							})
 							.finally(function(){
 								self.is_loading = false;

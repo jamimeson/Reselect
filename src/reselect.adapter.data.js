@@ -3,6 +3,7 @@ Reselect.service('ReselectDataAdapter', ['$q', function($q){
 
     var DataAdapter = function(){
         this.data = [];
+        this.groupByFn = null;
     };
 
     DataAdapter.prototype.observe = function(){
@@ -24,7 +25,6 @@ Reselect.service('ReselectDataAdapter', ['$q', function($q){
         var search_options = {};
 
         if(search_term){
-
             // Fuzzy Search
             var fuse = new Fuse(this.data, search_options);
 
@@ -35,6 +35,8 @@ Reselect.service('ReselectDataAdapter', ['$q', function($q){
                     return self.data[index];
                 });
             }
+
+            choices = self.groupData(choices);
         }else{
             choices = this.data;
         }
@@ -46,9 +48,58 @@ Reselect.service('ReselectDataAdapter', ['$q', function($q){
         return defer.promise;
     };
 
-    DataAdapter.prototype.updateData = function(newData){
+    DataAdapter.prototype.groupData = function(choices){
+        var self = this;
 
-        this.data = newData;
+        // Filter choices by group by function
+        // TODO: Optmize this to run once per unique data collection
+        if(self.groupByFn && typeof self.groupByFn === 'function'){
+            var groupMap = {};
+            var groupedChoices = [];
+            var finalChoices = [];
+
+            angular.forEach(choices, function(choice){
+                if(choice.$$group){
+                    return;
+                }
+                var groupId = self.groupByFn(choice);
+                var groupIndex;
+
+                if(!angular.isDefined(groupMap[groupId])){
+                    groupIndex = groupedChoices.length;
+                    groupMap[groupId] = groupIndex;
+                    groupMap[groupIndex] = groupId;
+
+                    groupedChoices[groupIndex] = [];
+                    groupedChoices[groupIndex].push(choice);
+                }else{
+                    groupIndex = groupMap[groupId];
+                    groupedChoices[groupIndex].push(choice);
+                }
+            });
+
+            angular.forEach(groupedChoices, function(groupedChoice, index){
+                if(groupMap[index] !== undefined){
+                    finalChoices.push({
+                        $$group: groupMap[index]
+                    });
+                }
+
+                finalChoices = finalChoices.concat(groupedChoice);
+            });
+
+            choices = finalChoices;
+        }
+
+        return choices;
+    };
+
+    DataAdapter.prototype.updateData = function(newData){
+        var self = this;
+
+        var choices = self.groupData(newData);
+
+        this.data = choices;
 
         return this.data;
     };
@@ -66,6 +117,7 @@ Reselect.service('ReselectAjaxDataAdapter', ['$http', function($http){
         this.data = [];
         this.page = 1;
         this.pagination = {};
+        this.groupByFn = null;
 
         this.parsedOptions = parsedOptions;
 
@@ -84,7 +136,7 @@ Reselect.service('ReselectAjaxDataAdapter', ['$http', function($http){
         return;
     };
 
-    DataAdapter.prototype.getData = function(search_term){
+    DataAdapter.prototype.getData = function(search_term, loadingMore){
         var self = this;
 
         var state = {
@@ -122,7 +174,9 @@ Reselect.service('ReselectAjaxDataAdapter', ['$http', function($http){
                     self.pagination = null;
                 }
 
-                return choices;
+                self.updateData(choices.data, loadingMore);
+
+                return self.data;
             });
     };
 

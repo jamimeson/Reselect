@@ -46,6 +46,15 @@
 			self.ready = true;
 		});
 
+        self.groupBy = function(choice){
+            return choice.last_name[0];
+        };
+
+        self.groupBy2 = function(choice){
+            console.log(choice);
+            return choice[0];
+        };
+
 		self.invalidOptions2 = {
 			allowInvalid: function(value, done){
 				done('Resolved Value');

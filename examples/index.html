@@ -83,6 +83,56 @@
                         </reselect>
                     </div>
 
+                    <h3>Grouping:</h3>
+                    <div style="padding-bottom: 20px">
+                        <p>Static Data Grouping: Group by property</p>
+                        <reselect
+                            ng-model="simple.value6">
+                            <div reselect-selection>
+                                <span ng-bind="$choice.first_name"></span>
+                            </div>
+                            <div reselect-choices
+                                group-by="'last_name'"
+                                options="option.id as option in simple.mocks.objects track by id">
+                                    <span ng-bind-html="option.first_name | rshighlight : $reselect.search_term"></span> <span ng-bind="option.last_name"></span> - <span ng-bind="option.skill"></span>
+                            </div reselect-choices>
+                        </reselect>
+                    </div>
+
+                    <div style="padding-bottom: 20px">
+                        <p>Static Data Grouping: Group by Function</p>
+                        <reselect
+                            ng-model="simple.value6">
+                            <div reselect-selection>
+                                <span ng-bind="$choice.first_name"></span>
+                            </div>
+                            <div reselect-choices
+                                group-by="simple.groupBy"
+                                options="option.id as option in simple.mocks.objects track by id">
+                                    <span ng-bind-html="option.first_name | rshighlight : $reselect.search_term"></span> <span ng-bind="option.last_name"></span> - <span ng-bind="option.skill"></span>
+                            </div reselect-choices>
+                        </reselect>
+                    </div>
+
+                    <div style="padding-bottom: 20px">
+                        <p>Remote Data Grouping</p>
+                        <reselect
+                            ng-model="simple.remotevalue1">
+                            <div reselect-placeholder>
+                                Remote Data Choices
+                            </div>
+                            <div reselect-selection>
+                                <span ng-bind="$selection"></span>
+                            </div>
+                            <div reselect-choices
+                                options="option.data.title as option in $remote"
+                                remote="simple.remoteOptions">
+                                    <span ng-bind="option.data.title"></span>
+                            </div>
+                        </reselect>
+                    </div>
+
+
                     <h3>Custom No Options</h3>
                     <div style="padding-bottom: 20px">
                         <reselect
