@@ -1,7 +1,7 @@
 /*!
  * reselect
  * https://github.com/alexcheuk/Reselect
- * Version: 0.0.1 - 2016-06-02T22:22:50.540Z
+ * Version: 0.0.1 - 2016-06-07T21:37:55.138Z
  * License: MIT
  */
 
@@ -820,17 +820,19 @@ Reselect.service('ReselectDataAdapter', ['$q', function($q){
         var search_options = {};
 
         if(search_term){
-
             // Fuzzy Search
             var fuse = new Fuse(this.data, search_options);
 
             choices = fuse.search(search_term);
+            console.log('search result: ', choices);
 
             if(angular.isDefined(search_options.keys)){
                 choices = choices.map(function(index){
                     return self.data[index];
                 });
             }
+
+            console.log('search result: ', choices);
         }else{
             choices = this.data;
         }
